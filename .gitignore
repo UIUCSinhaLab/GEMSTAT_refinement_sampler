@@ -1,0 +1,10 @@
+.ipynb_checkpoints
+SCHED
+gene_crm_fout.hassan.txt
+src/seq2expr
+src/*.o
+*~
+starting_points/test*
+GEMIND
+JOBS
+ENSEMBLE*
