@@ -9,17 +9,22 @@ LD_LIBRARY_PATH=~/usr/lib:/home/grad/samee1/packages/gsl-1.14/lib:/software/inte
 export LD_LIBRARY_PATH
 
 JOBBASE=$1
+N=$(( ${2} + 1 ))
+method_name=${3}
+
 
 source ${JOBBASE}/ENV_DUMP.txt
 source ${JOBBASE}/SETTINGS_2.bash
 
-N=$(( ${2} + 1 ))
+export > ${JOBBASE}/final.bash
+
+
 
 
 #
 #Call the training method
 #
-${BASE}/METHODS/${method_name} --train
+${BASE}/METHODS/${method_name} --train 
 
 ##score that on every crossvalidation set
 for ORTHO_SEQ in ${DATA}/ORTHO/*.fa

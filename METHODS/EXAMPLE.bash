@@ -31,13 +31,21 @@ case $key in
     -t|--train)
     TRAIN=1
     ;;
-    -s|--searchpath)
-    SEARCHPATH="$2"
+    -d|--data)
+    DATA="$2"
     shift # past argument
     ;;
-    -l|--lib)
-    LIBPATH="$2"
+    -l|--log)
+    LOG="$2"
     shift # past argument
+    ;;
+    -o|--out)
+    OUT_prefix="$2"
+    shift
+    ;;
+    -p|--parfile)
+    PARFILE="$2"
+    shift
     ;;
     --default)
     DEFAULT=YES
@@ -58,7 +66,6 @@ then
 	NA_CYCLES=0
 fi
 
-PARFILE="$1/par/${N}.par"
 SINGLE_PAR_FILE=$(basename ${PARFILE} .par)
 STARTING_POINT_ARGS="-p ${PARFILE}"
 

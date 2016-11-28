@@ -46,13 +46,13 @@ else
 fi	
 
 #copy PAR files in
-if [ -z "${FILTERED_MODEL_SOURCE}" ]
+if [ -z "${ENSEMBLE_NAME}" ]
 then
-	python pysrc/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${JOBBASE}/par/ ${DATA}/template.par
+	python pysrc/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/template.par
 else
 	for N in $(seq ${N_TO_REFINE})	
 	do
-		cp ${FILTERED_MODEL_SOURCE}/${N}.par ${PAR_DIR}/${N}.par
+		cp ${BASE}/ENSEMBLES/${ENSEMBLE_NAME}/${N}.par ${PAR_DIR}/${N}.par
 	done
 fi
 

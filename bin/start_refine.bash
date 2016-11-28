@@ -25,7 +25,11 @@ environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
 Queue
 EOF
 
-cat > ${JOBDIR}/other/refine.con << EOF
+
+for one_method_name in ${method_names}
+do
+
+	cat > ${JOBDIR}/other/refine_${one_method_name}.con << EOF
 Universe       = vanilla
 Executable     = ${BASE_DIR}/scripts/refinement/single_refine.bash
 
@@ -35,10 +39,12 @@ error   = ${JOBDIR}/log/refine.error.\$(Process)
 
 environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
 
-arguments = ${JOBDIR} \$(Process)
+arguments = ${JOBDIR} \$(Process) ${one_method_name}
                                                   
 Queue ${N_TO_REFINE}
 EOF
+
+done
 
 cat > ${JOBDIR}/other/scores.con << EOF
 Universe       = vanilla
@@ -54,14 +60,23 @@ Queue 1
 
 EOF
 
+
 cat > ${JOBDIR}/other/everything.dag << EOF
 CONFIG ${JOBDIR}/other/dagman.config
 JOB setup ${JOBDIR}/other/setup.con
-JOB refine ${JOBDIR}/other/refine.con
 JOB scores ${JOBDIR}/other/scores.con
-PARENT setup CHILD refine
-PARENT refine CHILD scores
 EOF
+
+for one_method_name in ${method_names}
+do
+
+	cat >> ${JOBDIR}/other/everything.dag << EOF
+JOB refine_${one_method_name} ${JOBDIR}/other/refine_${one_method_name}.con
+PARENT setup CHILD refine_${one_method_name}
+PARENT refine_${one_method_name} CHILD scores
+EOF
+
+done
 
 cat > ${JOBDIR}/other/dagman.config << EOF
 DAGMAN_LOG_ON_NFS_IS_ERROR = False

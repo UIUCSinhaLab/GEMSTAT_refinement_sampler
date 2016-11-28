@@ -1,8 +1,11 @@
-method_1="baseline"
-method_2="new"
 
-N_TO_REFINE=100
-ENSEMBLE_NAME="example"
+
+method_names="EXAMPLE new"
+
+TRAIN_ORTHO=mel
+
+N_TO_REFINE=1
+ENSEMBLE_NAME="example_ensemble"
 
 DATA_ORIGIN="data_hassan_cic_baked_zld_free"
 
