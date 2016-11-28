@@ -6,7 +6,13 @@ BASE_DIR=${SCRIPT_DIR}/..
 
 JOB_ID=$1
 
-source ${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash
+if [ -f "${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash" ]
+then
+	source ${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash
+else
+	echo "you must provide the name of the job to run"
+	exit 1
+fi
 
 pushd ${BASE_DIR}
 
@@ -34,8 +40,8 @@ Universe       = vanilla
 Executable     = ${BASE_DIR}/scripts/refinement/single_refine.bash
 
 input   = /dev/null
-output  = ${JOBDIR}/log/refine.out.\$(Process)
-error   = ${JOBDIR}/log/refine.error.\$(Process)
+output  = ${JOBDIR}/log/refine_${one_method_name}.out.\$(Process)
+error   = ${JOBDIR}/log/refine_${one_method_name}.error.\$(Process)
 
 environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
 

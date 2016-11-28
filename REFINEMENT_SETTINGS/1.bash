@@ -1,6 +1,6 @@
 
 
-method_names="EXAMPLE new"
+method_names="EXAMPLE.bash new.bash"
 
 TRAIN_ORTHO=mel
 

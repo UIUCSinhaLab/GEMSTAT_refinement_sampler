@@ -19,28 +19,39 @@ source ${JOBBASE}/SETTINGS_2.bash
 export > ${JOBBASE}/final.bash
 
 
+method_sample_dir=${JOBBASE}/samples/method_${method_name}/
+
+#this can be changed later if we decide we want to stage the data in
+datadir_to_use=${JOBBASE}/data
+
+tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/${method_name}_temp_data.XXXXXX)
+
+training_data_dir=${tmpdatadir}/training_data
+mkdir -p ${training_data_dir}
+cp ${datadir_to_use}/base/* ${training_data_dir}
+cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make conditional
 
 
 #
 #Call the training method
 #
-${BASE}/METHODS/${method_name} --train 
+${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${JOBBASE}/par/${N}.par --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par
+
+
+
 
 ##score that on every crossvalidation set
-for ORTHO_SEQ in ${DATA}/ORTHO/*.fa
+for ORTHO_DIR in ${datadir_to_use}/ORTHO/*
 do
-	#prevent stale outputs
-	ORTHO_NAME=$(basename ${ORTHO_SEQ} .fa)
+	ORTHO_NAME=$(basename ${ORTHO_DIR})
 	
-	#In case there is a different expression file for the ortholog.
-	ORTHO_EXPR="$DATA/expr_raw.tab"
-	if [ -f ${DATA}/ORTHO/${ORTHO_NAME}.tab ]
-	then
-		ORTHO_EXPR=${DATA}/ORTHO/${ORTHO_NAME}.tab
-	fi
+	mkdir -p ${tmpdatadir}/ORTHO_${ORTHO_NAME}
+	cp ${datadir_to_use}/base/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
+	cp ${ORTHO_DIR}/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
 	
 	#
 	#Call the prediction method
 	#
 	
+	${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out
 done

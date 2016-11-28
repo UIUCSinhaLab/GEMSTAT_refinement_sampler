@@ -33,6 +33,15 @@ then
 	source ${JOBBASE}/SETTINGS_2.bash
 fi
 
+for one_method_name in ${method_names}
+do
+	mkdir -p ${JOBBASE}/samples/method_${one_method_name}/crossval
+	mkdir -p ${JOBBASE}/samples/method_${one_method_name}/out
+	mkdir -p ${JOBBASE}/samples/method_${one_method_name}/log
+	mkdir -p ${JOBBASE}/samples/method_${one_method_name}/data
+done
+
+
 if [ -d ${DATA_ORIGIN} ]
 then
 	cp -r ${DATA_ORIGIN}/* ${DATA}/
@@ -56,4 +65,4 @@ else
 	done
 fi
 
-export > ${JOBBASE}/ENV_DUMP.txt
+export | grep -e " BASE=" -e " JOBBASE=" -e " DATA=" -e " CROSSVAL_DIR=" -e " DATA=" -e " DATA_ORIGIN=" -e " JOBID=" -e " LOG=" -e " LD_LIBRARY_PATH=" -e " PATH=" -e " PAR_DIR=" > ${JOBBASE}/ENV_DUMP.txt
