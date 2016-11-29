@@ -55,8 +55,9 @@ case $key in
     PARFILE="$2"
     shift
     ;;
-    --default)
-    DEFAULT=YES
+    --)
+    shift
+    break
     ;;
     *)
             # unknown option
@@ -65,14 +66,22 @@ esac
 shift # past argument or value
 done
 
+##
+#Snippet from
+#
+#http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+#
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#
+#end snippet
+##
 
-echo "The contents of the data dir are", ${DATA}
-ls ${DATA}
-head -n1 ${DATA}/seqs.fa
+#just for test
+SRC=${SCRIPT_DIR}/../GEM/NLOPT/src
 
 
 #use whatever way you want to separate training from prediction
-if [ ! $TRAIN == "1" ]
+if [ ! "$TRAIN" == "1" ]
 then
 	NA_CYCLES=0
 fi
@@ -81,16 +90,14 @@ SINGLE_PAR_FILE=$(basename ${PARFILE} .par)
 STARTING_POINT_ARGS="-p ${PARFILE}"
 
 
-#export BASE_COMMON_ARGS="-rs $DATA/r_seqs.fa -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.ensemb_refine.txt"
-export BASE_COMMON_ARGS=" -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.ensemb_refine.txt"
-export COMMON_DATA_ARGS="-s $DATA/seqs.fa ${BASE_COMMON_ARGS}"
+export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.ensemb_refine.txt"
+export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
 export MODEL_ARGS="-o Direct -oo SSE -ct 25 -rt 250 -et 0.5 "
 
 
-
-#$SRC/seq2expr ${COMMON_DATA_ARGS} ${MODEL_ARGS} -e $DATA/expr.tab -f $DATA/factor_expr.tab -fo ${JOBBASE}/samples/out/${SINGLE_PAR_FILE}_raw.out -na ${NA_SMOOTH} ${STARTING_POINT_ARGS} -po ${JOBBASE}/samples/out/${SINGLE_PAR_FILE}_raw.par | tail -n1 > ${LOG}/${SINGLE_PAR_FILE}_raw.log	
-
-
-#$SRC/seq2expr ${COMMON_DATA_ARGS} -s ${ORTHO_SEQ} ${MODEL_ARGS} ${EXTRA_CMD_RAW} -wt ${DATA}/axis_wts.txt -e ${ORTHO_EXPR} -f $DATA/factor_expr_raw.tab -fo /dev/null -na 0 -p ${JOBBASE}/samples/out/${SINGLE_PAR_FILE}_raw.par -fo ${CROSSVAL_DIR}/${SINGLE_PAR_FILE}_${ORTHO_NAME}_raw.out | tail -n1 > ${LOG}/${SINGLE_PAR_FILE}_${ORTHO_NAME}_raw.log
-
-
+if [ "${TRAIN}" == "1" ]
+then
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} | tail -n1 > ${LOG}	
+else
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} | tail -n1 > ${LOG}	
+fi

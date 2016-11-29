@@ -53,5 +53,5 @@ do
 	#Call the prediction method
 	#
 	
-	${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out
+	${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out
 done
