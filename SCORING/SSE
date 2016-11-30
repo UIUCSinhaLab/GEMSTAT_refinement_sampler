@@ -15,16 +15,18 @@
 #BASE
 #DATA
 #JOBBASE
-#N job number
 #Whatever was in your settings file.
+
+
+#Ideally, a scoring script just uses the output file, and maybe the output par file, but it does have access to the full input data, you can calculate any score you want.
+#whatever output you write, it should be to STDERR, STDOUT is reserved for writing the score, on one line, with or without a newline.
+
 
 
 
 #DEBUG
-echo "I received arguments ${*}"
+echo "I received arguments ${*}" 1>&2
 
-#Default values
-TRAIN=0
 
 
 while [[ $# -gt 1 ]]
@@ -32,15 +34,8 @@ do
 key="$1"
 
 case $key in
-    -t|--train)
-    TRAIN=1
-    ;;
     -d|--data)
     DATA="$2"
-    shift # past argument
-    ;;
-    -l|--log)
-    LOG="$2"
     shift # past argument
     ;;
     -o|--out)
@@ -67,8 +62,8 @@ shift # past argument or value
 done
 
 #DEBUG
-echo "Additional arguments" "${*}"
-echo "DATA" ${DATA}
+echo "Additional arguments" "${*}" 1>&2
+echo "DATA" ${DATA} 1>&2
 ##
 #Snippet from
 #
@@ -79,16 +74,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #end snippet
 ##
 
-#just for test
-#DEBUG
-SRC=${SCRIPT_DIR}/../GEM/NLOPT/src
-
-
-#use whatever way you want to separate training from prediction
-if [ ! "$TRAIN" == "1" ]
-then
-	NA_CYCLES=0
-fi
 
 SINGLE_PAR_FILE=$(basename ${PARFILE} .par)
 STARTING_POINT_ARGS="-p ${PARFILE}"
@@ -99,9 +84,6 @@ export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
 export MODEL_ARGS="-o Direct -oo SSE -ct 25 -rt 250 -et 0.5 "
 
 
-if [ "${TRAIN}" == "1" ]
-then
-	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
-else
-	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} &> ${LOG}
-fi
+#$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
+
+echo -n "1.21212121"

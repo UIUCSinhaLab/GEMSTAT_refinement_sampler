@@ -20,6 +20,7 @@ export OUT=${BUILD_OUT-"$JOBBASE/out"}
 
 echo JOBID ${JOBID} JOBBASE ${JOBBASE}
 
+mkdir -p ${JOBBASE}/scores
 
 export CROSSVAL_DIR=${JOBBASE}/crossval
 mkdir -p ${CROSSVAL_DIR}

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 #module load python
 export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
 
@@ -9,49 +8,74 @@ echo "USING PYTHON " $(which python)
 LD_LIBRARY_PATH=~/usr/lib:/home/grad/samee1/packages/gsl-1.14/lib:/software/intel-composer-2011u5-x86_64/composerxe-2011.5.220/mkl/lib/intel64:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
-set -e
+#JOBBASE we get from the environment
+#JOBID we also get from the environment, but it should just match job base
+SCORING_METHODS=$(ls ${BASE}/SCORING)
 
-export BASE=${BASE-"."}
-export SRC=${SRC-"$BASE/GEMBASE/src"}
+source ${JOBBASE}/ENV_DUMP.txt
+source ${JOBBASE}/SETTINGS_2.bash
 
-export JOBBASE=${JOBBASE-"${BASE}"}
-export DATA=${JOBBASE}/data
-export OUTFILE=${OUTFILE-"ind_model.out"}
-export PAR_DIR=${PAR_DIR-"$JOBBASE/par"}
-export LOG=${BUILD_LOG-"$JOBBASE/log"}
-export OUT=${BUILD_OUT-"$JOBBASE/out"}
+#since it's just one overall scoring tool, it's ok to use copied data..., it will only get copied once, not for every score.
 
-export CROSSVAL_DIR=${JOBBASE}/crossval
+#this can be changed later if we decide we want to stage the data in
+datadir_to_use=${JOBBASE}/data
+tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/${method_name}_temp_data.XXXXXX)
+training_data_dir=${tmpdatadir}/training_data
+mkdir -p ${training_data_dir}
 
+cp ${datadir_to_use}/base/* ${training_data_dir}
+cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make conditional
 
-#compile the results later
-
-for PARFILE in ${JOBBASE}/par/*.par
+##score that on every crossvalidation set
+#copy/setup the crossvalidation data here to not repeat the work every time.
+for ORTHO_DIR in ${datadir_to_use}/ORTHO/*
 do
-	SINGLE_PAR_FILE=$(basename ${PARFILE} .par)	
-        read aa raw_beta raw_score < ${LOG}/${SINGLE_PAR_FILE}_raw.log
-        read aa exp_beta exp_score < ${LOG}/${SINGLE_PAR_FILE}_expanded.log
+	ORTHO_NAME=$(basename ${ORTHO_DIR})
 	
-        echo "${raw_beta} ${raw_score} ${exp_beta} ${exp_score} ${SINGLE_PAR_FILE}" >> ${JOBBASE}/refined_scores.txt
-	
-	for ORTHO_SEQ in ${DATA}/ORTHO/*.fa
-	do
-		#prevent stale outputs
-                rm -f ${LOG}/${SINGLE_PAR_FILE}_raw.log ${LOG}/${SINGLE_PAR_FILE}_expanded.log
-                ORTHO_NAME=$(basename ${ORTHO_SEQ} .fa)
-		
-		read aa raw_beta raw_score < ${LOG}/${SINGLE_PAR_FILE}_${ORTHO_NAME}_raw.log
-                read aa exp_beta exp_score < ${LOG}/${SINGLE_PAR_FILE}_${ORTHO_NAME}_expanded.log
-                
-                echo "${raw_beta} ${raw_score} ${exp_beta} ${exp_score} ${SINGLE_PAR_FILE}" >> ${JOBBASE}/refined_scores_${ORTHO_NAME}.txt
-	done
+        mkdir -p ${tmpdatadir}/ORTHO_${ORTHO_NAME}
+        cp ${datadir_to_use}/base/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
+        cp ${ORTHO_DIR}/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
 done
 
-for ORTHO_SEQ in ${DATA}/ORTHO/*.fa
+
+
+for method_name in ${method_names}
 do
-	name=$(basename ${ORTHO_SEQ} .fa)
-	python -c "import scipy as S; A = S.loadtxt('${JOBBASE}/refined_scores_${name}.txt'); foo = A[:,1].mean() - A[:,3].mean(); print '${name} %.15f' % foo;" >> ${JOBBASE}/final_scores.txt
-done	
-	
-#this is just TEMPORARY for the ensemble sampling
-#FULL, UNSMOOTHED DATA
+	method_sample_dir=${JOBBASE}/samples/method_${method_name}/
+
+
+	##score that on every crossvalidation set
+	for ORTHO_DIR in ${datadir_to_use}/ORTHO/*
+	do
+		ORTHO_NAME=$(basename ${ORTHO_DIR})
+		ORTHO_DATA_DIR=${tmpdatadir}/ORTHO_${ORTHO_NAME}
+		
+		METHOD_ORTHO_SCORE_FILE=${JOBBASE}/scores/${method_name}.txt
+		echo -n '#i' > ${METHOD_ORTHO_SCORE_FILE}
+		for one_scoring_method in ${SCORING_METHODS}
+		do
+			echo -n " ${one_scoring_method}" >> ${METHOD_ORTHO_SCORE_FILE}
+		done
+		echo "" >> ${METHOD_ORTHO_SCORE_FILE}
+		
+		#for every refined par file	
+		for N in $(seq ${N_TO_REFINE})
+		do
+		#
+		#Call the prediction method
+		#
+		
+		echo -n "$N" >> ${METHOD_ORTHO_SCORE_FILE}
+
+
+			for one_scoring_method in ${SCORING_METHODS}
+			do
+				echo -n " " >> ${METHOD_ORTHO_SCORE_FILE}
+				echo -n "$(${BASE}/SCORING/${one_scoring_method} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${JOBBASE}/par/${N}.par --parout ${method_sample_dir}/out/${N}.par --out ${method_sample_dir}/out/${N}.out)" >> ${METHOD_ORTHO_SCORE_FILE}
+			done
+			
+			echo "" >> ${METHOD_ORTHO_SCORE_FILE}
+		done
+	done
+
+done

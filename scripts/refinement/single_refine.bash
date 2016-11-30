@@ -28,6 +28,7 @@ tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/${method_name}_temp_data.XXXXXX)
 
 training_data_dir=${tmpdatadir}/training_data
 mkdir -p ${training_data_dir}
+
 cp ${datadir_to_use}/base/* ${training_data_dir}
 cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make conditional
 
@@ -35,8 +36,14 @@ cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make con
 #
 #Call the training method
 #
-${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${JOBBASE}/par/${N}.par --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par
 
+#parenthesis so that the results of the eval don't come out into this shell.
+(
+#definitely not secure
+eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
+eval 'method_additional_args=${method_args_'"${method_name}"'}'
+eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${JOBBASE}/par/${N}.par --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par -- ${method_additional_args}
+)
 
 
 
@@ -52,6 +59,9 @@ do
 	#
 	#Call the prediction method
 	#
-	
-	${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out
+	(
+	eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
+	eval 'method_additional_args=${method_args_'"${method_name}"'}'
+	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
+	)
 done
