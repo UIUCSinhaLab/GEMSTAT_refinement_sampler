@@ -50,7 +50,7 @@ do
 		ORTHO_NAME=$(basename ${ORTHO_DIR})
 		ORTHO_DATA_DIR=${tmpdatadir}/ORTHO_${ORTHO_NAME}
 		
-		METHOD_ORTHO_SCORE_FILE=${JOBBASE}/scores/${method_name}.txt
+		METHOD_ORTHO_SCORE_FILE=${JOBBASE}/scores/${method_name}_${ORTHO_NAME}.txt
 		echo -n '#i' > ${METHOD_ORTHO_SCORE_FILE}
 		for one_scoring_method in ${SCORING_METHODS}
 		do
@@ -64,14 +64,14 @@ do
 		#
 		#Call the prediction method
 		#
-		
+	
 		echo -n "$N" >> ${METHOD_ORTHO_SCORE_FILE}
 
 
 			for one_scoring_method in ${SCORING_METHODS}
 			do
 				echo -n " " >> ${METHOD_ORTHO_SCORE_FILE}
-				echo -n "$(${BASE}/SCORING/${one_scoring_method} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${JOBBASE}/par/${N}.par --parout ${method_sample_dir}/out/${N}.par --out ${method_sample_dir}/out/${N}.out)" >> ${METHOD_ORTHO_SCORE_FILE}
+				echo -n "$(${BASE}/SCORING/${one_scoring_method} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${JOBBASE}/par/${N}.par --parout ${method_sample_dir}/out/${N}.par --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out)" >> ${METHOD_ORTHO_SCORE_FILE}
 			done
 			
 			echo "" >> ${METHOD_ORTHO_SCORE_FILE}
