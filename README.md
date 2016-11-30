@@ -31,7 +31,7 @@ A dataset directory must contain the following:
 - template.par (optional, but used if you want to randomly generate starting points on-the-fly.)
 - base/ (required by the system)
 	- seqs.fa (assumed by gemstat)
-	- 
+	- whatever_else
 - ORTHO/
 	- whatever_your_training_ortholog_name_was
 		- whatever files you want to have overwrite the base dataset
