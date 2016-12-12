@@ -39,6 +39,7 @@ do
 Universe       = vanilla
 Executable     = ${BASE_DIR}/scripts/refinement/single_refine.bash
 
+
 input   = /dev/null
 output  = ${JOBDIR}/log/refine_${one_method_name}.out.\$(Process)
 error   = ${JOBDIR}/log/refine_${one_method_name}.error.\$(Process)
@@ -62,10 +63,15 @@ error   = ${JOBDIR}/log/scores.error.\$(Process)
 
 environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
 
+arguments = ${JOBDIR} 
+
 Queue 1
 
 EOF
 
+#
+#CREATE the DAG
+#
 
 cat > ${JOBDIR}/other/everything.dag << EOF
 CONFIG ${JOBDIR}/other/dagman.config
