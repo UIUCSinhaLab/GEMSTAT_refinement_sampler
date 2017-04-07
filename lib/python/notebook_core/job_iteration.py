@@ -1,13 +1,13 @@
 
 import os
 import os.path
-import glob
-import re
+import glob as _glob
+import re as _re
 
 from gemstat.matrix import GEMSTAT_Matrix
 
 def _load_samples(basedir_ls,munge="*.out"):
-    all_outfiles = glob.glob(os.path.join(basedir_ls, munge))
+    all_outfiles = _glob.glob(os.path.join(basedir_ls, munge))
     all_outfiles.sort()
     #print all_outfiles
     
@@ -36,15 +36,15 @@ def create_generator(basedir,orthologs_to_use=None):
     detected_orthonames = list()
     
     #Test for old style job
-    if len(glob.glob(os.path.join(basedir,"crossval","*_*_expanded.out"))) != 0:
+    if len(_glob.glob(os.path.join(basedir,"crossval","*_*_expanded.out"))) != 0:
         old_style_job = True
-        detected_orthonames = list(set([re.sub(".*_([^_]*)_.*","\\1",i) for i in os.listdir(os.path.join(basedir,"crossval")) ]))
+        detected_orthonames = list(set([_re.sub(".*_([^_]*)_.*","\\1",i) for i in os.listdir(os.path.join(basedir,"crossval")) ]))
         job_methods = ["std","reg"]
     else:#new style job
         old_style_job = False
-        find_m_names = re.findall("""method_names[:whitespace:]*=[:whitespace:]*("|')(.*)("|')""",settings_contents)
+        find_m_names = _re.findall("""method_names[:whitespace:]*=[:whitespace:]*("|')(.*)("|')""",settings_contents)
         job_methods = map(lambda x:x.strip(), find_m_names[-1][1].split())
-        detected_orthonames = list(set([re.sub("([^_]*)_\d*.out","\\1",i) for i in os.listdir(os.path.join(basedir,
+        detected_orthonames = list(set([_re.sub("([^_]*)_\d*.out","\\1",i) for i in os.listdir(os.path.join(basedir,
                                                                                                          "samples",
                                                                                                          "method_{}".format(job_methods[0])
                                                                                                          ,"crossval")) ]))
