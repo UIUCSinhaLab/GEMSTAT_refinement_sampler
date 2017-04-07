@@ -86,4 +86,4 @@ export MODEL_ARGS="-o Direct -oo SSE -ct 25 -rt 250 -et 0.5 "
 
 #$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
 
-echo -n $(export PYTHONPATH=${BASE}/OTHER_TEST/GEMSTAT_scripts/python/src/; python ${BASE}/OTHER_TEST/GEMSTAT_scripts/python/scripts/score_predictions.py -n --score SSE ${OUT_filename})
+echo -n $(export PYTHONPATH=${BASE}/lib/GEMSTAT_scripts/python/src/; python ${BASE}/lib/GEMSTAT_scripts/python/scripts/score_predictions.py -n --score SSE ${OUT_filename})
