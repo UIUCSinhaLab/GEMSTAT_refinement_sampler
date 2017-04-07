@@ -16,11 +16,11 @@ fi
 
 pushd ${BASE_DIR}
 
-JOBDIR=$(./scripts/makejob.bash ${JOB_ID} ENSEMBLE_REFINE)
+JOBDIR=$(${BASE_DIR}/lib/scripts/makejob.bash ${JOB_ID} ENSEMBLE_REFINE)
 
 cat > ${JOBDIR}/other/setup.con << EOF
 Universe       = vanilla
-Executable     = ${BASE_DIR}/scripts/refinement/setup.bash
+Executable     = ${BASE_DIR}/lib/scripts/refinement/setup.bash
 
 input   = /dev/null
 output  = ${JOBDIR}/log/setup.out     
@@ -35,7 +35,7 @@ EOF
 
 cat > ${JOBDIR}/other/refine.con << EOF
 Universe       = vanilla
-Executable     = ${BASE_DIR}/scripts/refinement/single_refine.bash
+Executable     = ${BASE_DIR}/lib/scripts/refinement/single_refine.bash
 
 
 input   = /dev/null
@@ -52,7 +52,7 @@ EOF
 
 cat > ${JOBDIR}/other/scores.con << EOF
 Universe       = vanilla
-Executable     = ${BASE_DIR}/scripts/refinement/scores.bash
+Executable     = ${BASE_DIR}/lib/scripts/refinement/scores.bash
 
 input   = /dev/null
 output  = ${JOBDIR}/log/scores.out.\$(Process)

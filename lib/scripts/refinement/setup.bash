@@ -58,7 +58,7 @@ fi
 #copy PAR files in
 if [ -z "${ENSEMBLE_NAME}" ]
 then
-	python pysrc/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/template.par
+	python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/template.par
 else
 	for N in $(seq ${N_TO_REFINE})	
 	do
