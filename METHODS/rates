@@ -103,8 +103,9 @@ if [ "${TRAIN}" == "1" ]
 then
 	tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/noiseddata.XXXXXX)
 	cp ${DATA}/* ${tmpdatadir}/
-	python /home/bjlunt2/BRYAN_SAMPLING/pysrc/make_robustness_input.py --s0 ${SIGMA0} --s1 ${SIGMA1} --C ${COPIES} ${tmpdatadir}/factor_expr.tab ${tmpdatadir}/factor_expr.tab.noise
-	python /home/bjlunt2/BRYAN_SAMPLING/pysrc/make_robustness_input.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/expr.tab ${tmpdatadir}/expr.tab.noise
+	export PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/
+	python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 ${SIGMA0} --s1 ${SIGMA1} --C ${COPIES} ${tmpdatadir}/factor_expr.tab ${tmpdatadir}/factor_expr.tab.noise
+	python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/expr.tab ${tmpdatadir}/expr.tab.noise
 	
 	
 	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} -e ${tmpdatadir}/expr.tab.noise -f ${tmpdatadir}/factor_expr.tab.noise ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}

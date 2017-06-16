@@ -4,10 +4,10 @@ method_names="EXAMPLE new"
 
 TRAIN_ORTHO=mel
 
-N_TO_REFINE=1
+N_TO_REFINE=10
 ENSEMBLE_NAME="example_ensemble"
 
-DATA_ORIGIN="data_hassan_cic_baked_zld_free"
+DATA_ORIGIN="ind"
 
 
 #any environment variables we exported will be available to the method

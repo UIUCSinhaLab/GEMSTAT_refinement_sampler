@@ -96,7 +96,7 @@ STARTING_POINT_ARGS="-p ${PARFILE}"
 
 export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.ensemb_refine.txt"
 export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
-export MODEL_ARGS="-o Direct -oo SSE -ct 45 -rt 150 -et 0.6 -lower_bound ${DATA}/lower.par -upper_bound ${DATA}/upper.par"
+export MODEL_ARGS="-o Rates -oo SSE -ct 45 -rt 150 -et 0.6 -lower_bound ${DATA}/lower.par -upper_bound ${DATA}/upper.par"
 
 
 if [ "${TRAIN}" == "1" ]
