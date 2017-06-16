@@ -1,3 +1,4 @@
 [submodule "lib/GEMSTAT_scripts"]
 	path = lib/GEMSTAT_scripts
 	url = https://github.com/UIUCSinhaLab/GEMSTAT_scripts.git
+	branch = master
