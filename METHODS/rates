@@ -81,7 +81,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #just for test
 #DEBUG
-SRC=${BASE}/GEM/GEMSTAT/src
+SRC=${BASE}/GEM/RATESGS/src
 
 
 #use whatever way you want to separate training from prediction
@@ -94,16 +94,20 @@ SINGLE_PAR_FILE=$(basename ${PARFILE} .par)
 STARTING_POINT_ARGS="-p ${PARFILE}"
 
 
-export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.txt"
+export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.rates -c $DATA/coop.txt -ff $DATA/free_fix.rates"
 export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
-export MODEL_ARGS="-o Direct -oo SSE -ct 25 -rt 250 -et 0.5 "
+export MODEL_ARGS="-o Rates -oo SSE -ct 45 -rt 150 -et 0.6 -lower_bound ${DATA}/lower.par -upper_bound ${DATA}/upper.par"
 
-ACCESS_ARGS="--gemstat ${SRC}/seq2expr --model ${MODEL_JSON} --epochs ${NUM_EPOCHS} --wtmx ${ACCESS_PRED_WTMX} --k_acc ${ACCESS_EFFECT}"
-ACCESS_PROG="/shared-mounts/sinhas/bjlunt2/2015_Fall_PredictAccess/2016_PredicAccess/accessPred/accessibility_gemstat.bash"
 
 if [ "${TRAIN}" == "1" ]
 then
-	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
+	tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/noiseddata.XXXXXX)
+	cp ${DATA}/* ${tmpdatadir}/
+	python /home/bjlunt2/BRYAN_SAMPLING/pysrc/make_robustness_input.py --s0 ${SIGMA0} --s1 ${SIGMA1} --C ${COPIES} ${tmpdatadir}/factor_expr.tab ${tmpdatadir}/factor_expr.tab.noise
+	python /home/bjlunt2/BRYAN_SAMPLING/pysrc/make_robustness_input.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/expr.tab ${tmpdatadir}/expr.tab.noise
+	
+	
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} -e ${tmpdatadir}/expr.tab.noise -f ${tmpdatadir}/factor_expr.tab.noise ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
 else
-	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} &> ${LOG}
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} &> ${LOG}
 fi
