@@ -103,4 +103,4 @@ cat > ${JOBDIR}/other/dagman.config << EOF
 DAGMAN_LOG_ON_NFS_IS_ERROR = False
 EOF
 
-condor_submit_dag ${JOBDIR}/other/everything.dag
+condor_submit_dag -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
