@@ -96,7 +96,8 @@ STARTING_POINT_ARGS="-p ${PARFILE}"
 
 export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.txt"
 export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
-export MODEL_ARGS="-o Direct -oo SSE -ct 25 -rt 250 -et 0.5 "
+export MODEL_ARGS="-o Direct "
+#"-oo SSE -ct 25 -rt 250 -et 0.5" 
 
 
 if [ "${TRAIN}" == "1" ]
@@ -108,7 +109,7 @@ then
 	python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/expr.tab ${tmpdatadir}/expr.tab.noise
 	
 	
-	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} -e ${tmpdatadir}/expr.tab.noise -f ${tmpdatadir}/factor_expr.tab.noise ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} -e ${tmpdatadir}/expr.tab.noise -f ${tmpdatadir}/factor_expr.tab.noise ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} ${*} &> ${LOG}
 else
-	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} &> ${LOG}
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} ${*} &> ${LOG}
 fi

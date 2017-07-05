@@ -103,7 +103,7 @@ ACCESS_PROG="/shared-mounts/sinhas/bjlunt2/2015_Fall_PredictAccess/2016_PredicAc
 
 if [ "${TRAIN}" == "1" ]
 then
-	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} &> ${LOG}
+	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} ${*} &> ${LOG}
 else
-	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} &> ${LOG}
+	bash ${ACCESS_PROG} ${ACCESS_ARGS} -- ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} ${*} &> ${LOG}
 fi

@@ -26,7 +26,11 @@ def wPGP_single(gt,in_pred):
     penalty = penalty_num / penalty_denom
     
     wpgp_score = 0.5 + 0.5*(reward-penalty)
-    assert wpgp_score <= 1.0 and wpgp_score >= 0.0, "PGP score not in acceptable range"
+    #assert wpgp_score <= 1.0 and wpgp_score >= 0.0, "PGP score not in acceptable range"
+    if wpgp_score >1.0 or wpgp_score < 0.0:
+	import sys
+	sys.stderr.write("There was a problem withthe pgp score {} \n".format(wpgp_score))
+	return 0.5
     return wpgp_score
 
 def wPGP(gt,in_pred):

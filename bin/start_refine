@@ -14,6 +14,13 @@ else
 	exit 1
 fi
 
+if [ -f "${BASE_DIR}/ENSEMBLE_REFINE/${JOB_ID}/other/everything.dag" ]
+then
+	echo "EXISTS!: ${BASE_DIR}/ENSEMBLE_REFINE/${JOB_ID}/other/everything.dag"
+	exit 1
+fi
+
+
 pushd ${BASE_DIR}
 
 JOBDIR=$(${BASE_DIR}/lib/scripts/makejob.bash ${JOB_ID} ENSEMBLE_REFINE)
