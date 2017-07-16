@@ -6,11 +6,22 @@ BASE_DIR=${SCRIPT_DIR}/..
 
 JOB_ID=$1
 
+#allows a job to be submit by its config file directly. That allows the user to use tab completion.
+if [ -f "${JOB_ID}" ]
+then
+	JOB_ID=$(basename ${JOB_ID} .bash)
+	echo "Submit by file, JOB_ID : ${JOB_ID}"
+fi
+
+
 if [ -f "${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash" ]
 then
 	source ${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash
 else
-	echo "you must provide the name of the job to run"
+	echo "I could not find the job configuration file for the job you asked for."
+	echo "If you specified it by file, that file must be in the proper"
+	echo "directory. (REFINEMENT_SETTINGS)"
+	echo "${BASE_DIR}/REFINEMENT_SETTINGS/"
 	exit 1
 fi
 
