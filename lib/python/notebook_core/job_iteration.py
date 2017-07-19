@@ -23,6 +23,18 @@ def _load_samples(basedir_ls,munge="*.out"):
 #
 #
 #
+def _load_samples_new(basedir_ls,munge="*.out"):
+    all_outfiles = _glob.glob(os.path.join(basedir_ls, munge))
+    all_outfiles.sort()
+    #print all_outfiles
+    
+    all_full_out_matrices = [GEMSTAT_Matrix.load(i) for i in all_outfiles]
+    
+    #read_predictions = S.vstack(all_out_matrices)
+    #read_predictions[read_predictions > 1.0] = 1.0
+    
+    #print("READ ", len(read_predictions))
+    return all_full_out_matrices
  
 def create_generator(basedir,orthologs_to_use=None):
     
@@ -57,12 +69,18 @@ def create_generator(basedir,orthologs_to_use=None):
     
     def generate_data_newstyle(basedir_gdn,job_methods,generator_ortho_names_to_use):
         for one_ortho in generator_ortho_names_to_use:
+            gt_filename = os.path.join(basedir_gdn,"data","ORTHO",one_ortho,"expr.tab")
+	    if not os.path.isfile(gt_filename):
+		gt_filename = os.path.join(basedir_gdn,"data","base","expr.tab")
+		if not os.path.isfile(gt_filename):
+			raise Exception("Could not find ground truth.")
+            ground_truth = GEMSTAT_Matrix.load(os.path.join(gt_filename))
             ret_dict = dict()
             for one_method in job_methods:
-                read_pred, tru_mat = [], None
-                read_pred, tru_mat = _load_samples(os.path.join(basedir_gdn,"samples/method_{}/crossval".format(one_method)),
+                read_pred = _load_samples_new(os.path.join(basedir_gdn,"samples/method_{}/crossval".format(one_method)),
                                                   munge=one_ortho+"_*.out")
-                ret_dict[one_method] = (tru_mat,read_pred)
+                read_pred = [i if i.storage.shape[0] == ground_truth.storage.shape[0] else i.separate_output()[1] for i in read_pred]
+                ret_dict[one_method] = (ground_truth,read_pred)
             yield one_ortho, ret_dict
     
     the_generator = None
