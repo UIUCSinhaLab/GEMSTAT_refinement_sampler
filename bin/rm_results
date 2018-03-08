@@ -11,6 +11,12 @@ JOB_ID=$1
 
 JOBDIR=${BASE_DIR}/ENSEMBLE_REFINE/${JOB_ID}
 
+if [ -z "${JOB_ID}" ]
+then
+	echo "you must specify a job"
+	exit 1
+fi
+
 if [ ! -d "${JOBDIR}" ]
 then
 	echo "No such job"

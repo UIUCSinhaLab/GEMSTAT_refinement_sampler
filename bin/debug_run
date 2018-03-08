@@ -6,10 +6,7 @@ BASE_DIR=${SCRIPT_DIR}/..
 
 JOB_ID=$1
 
-all_requirements=""#'(Machine != "hal9013.cs.illinois.edu")'
-
-MAX_IDLEJOBS=100
-
+all_requirements='(Machine != "hal9013.cs.illinois.edu")'
 
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.
 if [ -f "${JOB_ID}" ]
@@ -36,6 +33,7 @@ then
 	exit 1
 fi
 
+N_TO_REFINE=1
 
 pushd ${BASE_DIR}
 
@@ -67,9 +65,10 @@ input   = /dev/null
 output  = ${JOBDIR}/log/refine_\$(method_name).out.\$(whichitem)
 error   = ${JOBDIR}/log/refine_\$(method_name).error.\$(whichitem)
 
-environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
+environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID} DEBUG=True"
 
 requirements = ${all_requirements}
+
 
 arguments = ${JOBDIR} \$(whichitem) \$(method_name)
                                                   
@@ -132,4 +131,4 @@ cat > ${JOBDIR}/other/dagman.config << EOF
 DAGMAN_LOG_ON_NFS_IS_ERROR = False
 EOF
 
-condor_submit_dag -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
+condor_submit_dag -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag

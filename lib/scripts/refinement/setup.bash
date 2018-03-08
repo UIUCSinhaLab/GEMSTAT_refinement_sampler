@@ -11,6 +11,10 @@ export LD_LIBRARY_PATH
 
 set -e
 
+
+#
+# Overall DEFAULTS
+#
 export BASE=${BASE-"."}
 export JOBBASE=${JOBBASE-"${BASE}"}
 export DATA=${JOBBASE}/data
@@ -34,6 +38,7 @@ then
 	source ${JOBBASE}/SETTINGS_2.bash
 fi
 
+# Create necesary subdirectories
 for one_method_name in ${method_names}
 do
 	mkdir -p ${JOBBASE}/samples/method_${one_method_name}/crossval
@@ -58,7 +63,16 @@ fi
 #copy PAR files in
 if [ -z "${ENSEMBLE_NAME}" ]
 then
-	python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/template.par
+	TEMPLATE_FILENAME="template.par"
+	if [ -z ${TEMPLATE_NAME} ]
+	then
+		#nothing
+		echo "No special template name provided."
+	else
+		TEMPLATE_FILENAME=${TEMPLATE_NAME}
+	fi
+	
+	python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/${TEMPLATE_FILENAME}
 else
 	for N in $(seq ${N_TO_REFINE})	
 	do

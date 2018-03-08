@@ -65,3 +65,10 @@ do
 	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
 	)
 done
+
+
+if [ "${DEBUG}" = "True" ]
+then
+
+	sleep 1000
+fi
