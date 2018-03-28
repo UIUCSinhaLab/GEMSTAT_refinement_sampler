@@ -10,6 +10,7 @@ all_requirements=""
 #'(Machine != "hal9013.cs.illinois.edu")'
 
 MAX_IDLEJOBS=100
+FANIN_GROUP_SIZE=100
 
 
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.
@@ -77,6 +78,24 @@ arguments = ${JOBDIR} \$(whichitem) \$(method_name)
 Queue 1
 EOF
 
+cat > ${JOBDIR}/other/fanin.con << EOF
+Universe       = vanilla
+Executable     = ${BASE_DIR}/lib/scripts/fanin.bash
+
+
+input   = /dev/null
+output  = ${JOBDIR}/log/fanin_\$(method_name).out.\$(start_f)
+error   = ${JOBDIR}/log/fanin_\$(method_name).error.\$(start_f)
+
+environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
+
+requirements = ${all_requirements}
+
+arguments = ${JOBDIR} \$(method_name) \$(start_f) \$(end_f)
+                                                  
+Queue 1
+EOF
+
 
 cat > ${JOBDIR}/other/scores.con << EOF
 Universe       = vanilla
@@ -97,9 +116,67 @@ Queue 1
 EOF
 
 #
-#CREATE the DAG
+#CREATE the method refinement dags
 #
+for one_method_name in ${method_names}
+do
+	#THE ACTUAL COMPUTATIONS
+	for whichitem in $(seq 0 $((${N_TO_REFINE} - 1)) )
+        do
+                cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+JOB refine_${one_method_name}_${whichitem} ${JOBDIR}/other/refine.con
+VARS refine_${one_method_name}_${whichitem} method_name="${one_method_name}"
+VARS refine_${one_method_name}_${whichitem} whichitem="${whichitem}"
+EOF
+        done
+	
+	
+	#SETUP THE FANIN as part of the refinement dag
+	for START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1)) )
+        do
+                END_N=$((${START_N} + ${FANIN_GROUP_SIZE}))
+                cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+JOB fanin_${one_method_name}_${START_N} ${JOBDIR}/other/fanin.con
+VARS fanin_${one_method_name}_${START_N} method_name="${one_method_name}"
+VARS fanin_${one_method_name}_${START_N} start_f="${START_N}"
+VARS fanin_${one_method_name}_${START_N} end_f="${END_N}"
+Retry fanin_${one_method_name}_${START_N} 5
+PRIORITY fanin_${one_method_name}_${START_N} 10
+EOF
+        done
 
+	#Fanin jobs dependencies on main refine jobs
+	for J_START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1))  )
+        do
+		J_END_N=$(( ${J_START_N} + ${FANIN_GROUP_SIZE} - 1 ))
+		for one_job_to_fan_in in $(seq ${J_START_N} ${J_END_N})
+		do
+		cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+PARENT  refine_${one_method_name}_${one_job_to_fan_in} CHILD fanin_${one_method_name}_${J_START_N}
+EOF
+		done
+	done
+
+	#dependencies between the steps of fanin
+        for C_START_N in $(seq ${FANIN_GROUP_SIZE} ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1)) )
+        do
+                P_START_N=$((${C_START_N} - ${FANIN_GROUP_SIZE}))
+                cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+PARENT fanin_${one_method_name}_${P_START_N} CHILD fanin_${one_method_name}_${C_START_N}
+EOF
+        done
+
+	
+
+
+
+
+done
+
+
+#
+# CREATE the overal DAG
+#
 cat > ${JOBDIR}/other/everything.dag << EOF
 CONFIG ${JOBDIR}/other/dagman.config
 JOB setup ${JOBDIR}/other/setup.con
@@ -108,16 +185,6 @@ EOF
 
 for one_method_name in ${method_names}
 do
-
-	for whichitem in $(seq 0 $((${N_TO_REFINE} - 1)))
-	do
-		cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
-JOB refine_${one_method_name}_${whichitem} ${JOBDIR}/other/refine.con
-VARS refine_${one_method_name}_${whichitem} method_name="${one_method_name}"
-VARS refine_${one_method_name}_${whichitem} whichitem="${whichitem}"
-EOF
-	done
-
 
 cat >> ${JOBDIR}/other/everything.dag << EOF
 SUBDAG EXTERNAL refine_${one_method_name} ${JOBDIR}/other/refine_${one_method_name}.dag
