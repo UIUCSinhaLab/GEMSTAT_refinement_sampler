@@ -6,7 +6,8 @@ BASE_DIR=${SCRIPT_DIR}/..
 
 JOB_ID=$1
 
-all_requirements=""#'(Machine != "hal9013.cs.illinois.edu")'
+all_requirements=""
+#'(Machine != "hal9013.cs.illinois.edu")'
 
 MAX_IDLEJOBS=100
 
