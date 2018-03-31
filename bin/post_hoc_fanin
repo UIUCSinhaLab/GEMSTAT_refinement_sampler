@@ -12,6 +12,9 @@ all_requirements=""
 MAX_IDLEJOBS=100
 
 
+STEP_SIZE=500
+
+
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.
 if [ -f "${JOB_ID}" ]
 then
@@ -56,7 +59,6 @@ arguments = ${JOBDIR} \$(method_name) \$(start_f) \$(end_f)
 Queue 1
 EOF
 
-STEP_SIZE=200
 
 for one_method_name in ${method_names}
 do
