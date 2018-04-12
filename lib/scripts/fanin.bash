@@ -45,4 +45,6 @@ do
 
 	zip -g ${zip_archive_dir}/batch_${START_N}_${END_N}.zip -m ${method_sample_dir}/out/${i}.out -m ${method_sample_dir}/out/${i}.par -m ${method_sample_dir}/log/${i}.log -m ${method_sample_dir}/log/*_${i}.log -m ${method_sample_dir}/crossval/*_${i}.out
 
+	zip -g ${JOBBASE}/log/batch_${method_name}_refine_${START_N}_${END_N}.zip -m ${JOBBASE}/log/refine_${method_name}.error.${i} -m ${JOBBASE}/log/refine_${method_name}.out.${i}
+
 done
