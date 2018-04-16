@@ -149,6 +149,7 @@ EOF
 	for J_START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1))  )
         do
 		J_END_N=$(( ${J_START_N} + ${FANIN_GROUP_SIZE} - 1 ))
+		J_END_N=$(($J_END_N>${N_TO_REFINE} - 1 ? ${N_TO_REFINE} - 1 : $J_END_N))
 		for one_job_to_fan_in in $(seq ${J_START_N} ${J_END_N})
 		do
 		cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
