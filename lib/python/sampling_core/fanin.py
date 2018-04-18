@@ -137,7 +137,7 @@ class GS_Ensemble_Results(object):
         ortholog_set = set()
         for one_sub_id in sub_id_list:
             for one_file in glob.iglob(os.path.join(job_method_directory,"crossval","*_{}.out".format(one_sub_id))):
-                ortholog_set.add(os.path.basename(one_file).split("_")[0])
+                ortholog_set.add(os.path.basename(one_file).rsplit("_",1)[0])
         
         #now process all the orthologs we found
         #print("ORTHO SET", ortholog_set)
