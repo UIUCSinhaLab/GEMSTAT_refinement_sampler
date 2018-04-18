@@ -4,11 +4,61 @@ import numpy as np
 import glob
 import h5py
 import gemstat.model as MOD
+snot = MOD.snot
 import gemstat.matrix as GSM
 import os
 
 class GS_Ensemble_Results(object):
 
+    def add_pars_to_group(self, group_object, file_name_template, list_of_ids):
+        
+        #open an example parfile to figure out how many parameters there are.
+        example_param_vector = None
+        for one_id in list_of_ids:
+            try:
+                with open(file_name_template.format(one_id)) as input_snot_file:
+                    example_param_vector = snot.load(input_snot_file)
+                    break
+            except Exception as e:
+                continue
+                
+        if None == example_param_vector:
+            raise Exception("Not one of the par files could be loaded.")
+            
+        N_variables_in_parfile = snot.traverse(example_param_vector).size
+        snot.populate(example_param_vector, np.ones(N_variables_in_parfile))
+        N_max = np.max([int(i) for i in list_of_ids]) + 1
+        
+        #also store the par structure somehow.
+        group_object.attrs["template"] = snot.dumps(example_param_vector)
+        
+        
+        if not "data" in group_object.keys():
+            group_object.create_dataset("data",
+                                        shape=(np.max([N_max, CHUNK_SIZE]), N_variables_in_parfile),
+                                        chunks=(CHUNK_SIZE, N_variables_in_parfile),
+                                        maxshape=(None, N_variables_in_parfile),
+                                        compression="lzf",
+                                        fillvalue=np.nan,
+                                        dtype=self.par_dtype)
+        else:
+            if N_max > group_object["data"].shape[0]:
+                group_object["data"].resize(N_max, axis=0)
+        
+        
+        #actually load the parameters.
+        data_group = group_object["data"]
+        
+        for one_id in list_of_ids:
+            try:
+                with open(file_name_template.format(one_id)) as input_snot_file:
+                    data_group[one_id,:] = snot.traverse(snot.load(input_snot_file))
+            except Exception as e:
+                pass
+        #That's it!
+        
+        
+        
 
     #TODO: make static @classmethod
     def add_out_to_group(self, group_object, list_of_files, matching_ids):
@@ -34,7 +84,7 @@ class GS_Ensemble_Results(object):
             group_object.create_dataset("data",
                                         shape=(np.max([N_max, CHUNK_SIZE]), example_matrix.shape[0], example_matrix.shape[1]),
                                         chunks=(CHUNK_SIZE, example_matrix.shape[0], example_matrix.shape[1]),
-					maxshape=(None, example_matrix.shape[0], example_matrix.shape[1]),
+                                        maxshape=(None, example_matrix.shape[0], example_matrix.shape[1]),
                                         compression="lzf",
                                         fillvalue=np.nan,
                                         dtype=self.output_dtype)
@@ -74,8 +124,10 @@ class GS_Ensemble_Results(object):
         
         #1
         #TODO: Implement this
-        
-        
+        if not "parameters" in self.f.keys():
+            self.f.create_group("parameters")
+        params_group = self.f["parameters"]
+        self.add_pars_to_group(params_group, os.path.join(job_method_directory,"out","{}.par"), sub_id_list)
         
         #2 Ortho output
         if not "ORTHO" in self.f.keys():
@@ -119,13 +171,11 @@ class GS_Ensemble_Results(object):
         self.add_out_to_group(h5_train_group, load_files, load_ids)
         
     
-    def __init__(self, filepath, output_dtype=np.float16):
+    def __init__(self, filepath, output_dtype=np.float16, par_dtype=np.float16):
         self.f = None
         self.output_dtype = output_dtype
-        if os.path.exists(filepath):#TODO: do I need some other locking?
-            self.f = h5py.File(filepath, "r+")
-        else:
-            self.f = h5py.File(filepath, "w")
+        self.par_dtype = par_dtype
+        self.f = h5py.File(filepath, "a")
         
   
 if __name__ == "__main__":
