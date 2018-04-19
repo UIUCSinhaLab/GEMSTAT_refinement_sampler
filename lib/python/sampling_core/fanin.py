@@ -10,7 +10,7 @@ import os
 
 class GS_Ensemble_Results(object):
 
-    def add_pars_to_group(self, group_object, file_name_template, list_of_ids):
+    def add_pars_to_path(self, p_path, file_name_template, list_of_ids):
         
         #open an example parfile to figure out how many parameters there are.
         example_param_vector = None
@@ -29,30 +29,28 @@ class GS_Ensemble_Results(object):
         snot.populate(example_param_vector, np.ones(N_variables_in_parfile))
         N_max = np.max([int(i) for i in list_of_ids]) + 1
         
-        #also store the par structure somehow.
-        group_object.attrs["template"] = snot.dumps(example_param_vector)
         
-        
-        if not "data" in group_object.keys():
-            group_object.create_dataset("data",
+        data = self.f.get(p_path)
+        if None is data:
+            data = self.f.create_dataset(p_path,
                                         shape=(np.max([N_max, CHUNK_SIZE]), N_variables_in_parfile),
                                         chunks=(CHUNK_SIZE, N_variables_in_parfile),
                                         maxshape=(None, N_variables_in_parfile),
                                         compression="lzf",
                                         fillvalue=np.nan,
                                         dtype=self.par_dtype)
+            #also store the par structure somehow.
+            data.attrs["template"] = snot.dumps(example_param_vector)
         else:
-            if N_max > group_object["data"].shape[0]:
-                group_object["data"].resize(N_max, axis=0)
+            if N_max > data.shape[0]:
+                data.resize(N_max, axis=0)
         
         
         #actually load the parameters.
-        data_group = group_object["data"]
-        
         for one_id in list_of_ids:
             try:
                 with open(file_name_template.format(one_id)) as input_snot_file:
-                    data_group[one_id,:] = snot.traverse(snot.load(input_snot_file))
+                    data[one_id,:] = snot.traverse(snot.load(input_snot_file))
             except Exception as e:
                 pass
         #That's it!
@@ -61,7 +59,7 @@ class GS_Ensemble_Results(object):
         
 
     #TODO: make static @classmethod
-    def add_out_to_group(self, group_object, list_of_files, matching_ids):
+    def add_out_to_path(self, d_path, list_of_files, matching_ids):
         data, names = None, None
 
         #open the first file in the list just to get the shapes we need.
@@ -80,29 +78,23 @@ class GS_Ensemble_Results(object):
         N_max = np.max([int(i) for i in matching_ids]) + 1
         NUM_Enhancers, NUM_BINS = example_matrix.storage.shape 
 
-        if not "data" in group_object.keys():
-            group_object.create_dataset("data",
+        data = self.f.get(d_path)
+	if None is data:
+            data = self.f.create_dataset(d_path,
                                         shape=(np.max([N_max, CHUNK_SIZE]), example_matrix.shape[0], example_matrix.shape[1]),
                                         chunks=(CHUNK_SIZE, example_matrix.shape[0], example_matrix.shape[1]),
                                         maxshape=(None, example_matrix.shape[0], example_matrix.shape[1]),
                                         compression="lzf",
                                         fillvalue=np.nan,
                                         dtype=self.output_dtype)
+            data.attrs["names"] = [str(i) for i in example_matrix.names]
         else:
-            if N_max > group_object["data"].shape[0]:
-                group_object["data"].resize(N_max, axis=0)
+            if N_max > data.shape[0]:
+                data.resize(N_max, axis=0)
 
-        if not "names" in group_object.keys():
-            group_object.create_dataset("names",
-                                        shape=(example_matrix.shape[0],),
-                                        dtype=h5py.special_dtype(vlen=unicode))
-            group_object["names"][:] = example_matrix.names
-        else:
-            pass
             #TODO: Check that the names are the same
 
         #fill the data
-        data = group_object["data"]
         for an_id, a_filename in zip(matching_ids, list_of_files):
             an_id_int = int(an_id)
             try:
@@ -124,15 +116,9 @@ class GS_Ensemble_Results(object):
         
         #1
         #TODO: Implement this
-        if not "parameters" in self.f.keys():
-            self.f.create_group("parameters")
-        params_group = self.f["parameters"]
-        self.add_pars_to_group(params_group, os.path.join(job_method_directory,"out","{}.par"), sub_id_list)
+        self.add_pars_to_path("parameters", os.path.join(job_method_directory,"out","{}.par"), sub_id_list)
         
         #2 Ortho output
-        if not "ORTHO" in self.f.keys():
-            self.f.create_group("ORTHO")
-        h5_ortho_group = self.f["ORTHO"]
         #find the list of orthologs, some runs might have had an error on an ortholog
         ortholog_set = set()
         for one_sub_id in sub_id_list:
@@ -142,10 +128,6 @@ class GS_Ensemble_Results(object):
         #now process all the orthologs we found
         #print("ORTHO SET", ortholog_set)
         for one_ortho in ortholog_set:
-            if not one_ortho in h5_ortho_group.keys():
-                #print("Keyes", one_ortho, h5_ortho_group.keys())
-                h5_ortho_group.create_group(one_ortho)
-            h5_one_ortho_group = h5_ortho_group[one_ortho]
             
             files_and_ids = [(os.path.join(job_method_directory,
                                               "crossval",
@@ -156,19 +138,16 @@ class GS_Ensemble_Results(object):
             #print(load_files, load_ids)
             
             
-            self.add_out_to_group(h5_one_ortho_group,load_files, load_ids)
+            self.add_out_to_path("ORTHO/{}".format(one_ortho),load_files, load_ids)
         
         #3 training output
-        if not "train" in self.f.keys():
-            self.f.create_group("train")
-        h5_train_group = self.f["train"]
         files_and_ids = [(os.path.join(job_method_directory,
                                               "out",
                                               "{}.out".format(one_id)), one_id) for one_id in sub_id_list]
         
         files_and_ids = [i for i in files_and_ids if os.path.exists(i[0])]
         load_files, load_ids = zip(*files_and_ids)
-        self.add_out_to_group(h5_train_group, load_files, load_ids)
+        self.add_out_to_path("training", load_files, load_ids)
         
     
     def __init__(self, filepath, output_dtype=np.float16, par_dtype=np.float16):
