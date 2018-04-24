@@ -8,7 +8,7 @@ echo "USING PYTHON " $(which python)
 LD_LIBRARY_PATH=~/usr/lib:/home/grad/samee1/packages/gsl-1.14/lib:/software/intel-composer-2011u5-x86_64/composerxe-2011.5.220/mkl/lib/intel64:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
-
+DOZIP=true
 
 JOBBASE=$1
 method_name=${2}
@@ -16,8 +16,8 @@ START_N=${3}
 END_N=${4}
 
 
-source ${JOBBASE}/ENV_DUMP.txt
-source ${JOBBASE}/SETTINGS_2.bash
+#source ${JOBBASE}/ENV_DUMP.txt
+#source ${JOBBASE}/SETTINGS_2.bash
 
 export > ${JOBBASE}/final.bash
 
@@ -40,11 +40,14 @@ PYTHONPATH=${PYTHONPATH} python ${BASE}/lib/python/sampling_core/fanin.py ${JOBB
 
 
 #zip up all the files that were used.
-for i in $( seq ${START_N} ${END_N} )
-do
-
-	zip -g ${zip_archive_dir}/batch_${START_N}_${END_N}.zip -m ${method_sample_dir}/out/${i}.out -m ${method_sample_dir}/out/${i}.par -m ${method_sample_dir}/log/${i}.log -m ${method_sample_dir}/log/*_${i}.log -m ${method_sample_dir}/crossval/*_${i}.out
-
-	zip -g ${JOBBASE}/log/batch_${method_name}_refine_${START_N}_${END_N}.zip -m ${JOBBASE}/log/refine_${method_name}.error.${i} -m ${JOBBASE}/log/refine_${method_name}.out.${i}
-
-done
+if [ "$DOZIP" == "true" ]
+then
+	for i in $( seq ${START_N} ${END_N} )
+	do
+	
+		zip -q -g ${zip_archive_dir}/batch_${START_N}_${END_N}.zip -m ${method_sample_dir}/out/${i}.out -m ${method_sample_dir}/out/${i}.par -m ${method_sample_dir}/log/${i}.log -m ${method_sample_dir}/log/*_${i}.log -m ${method_sample_dir}/crossval/*_${i}.out
+	
+		zip -q -g ${JOBBASE}/log/batch_${method_name}_refine_${START_N}_${END_N}.zip -m ${JOBBASE}/log/refine_${method_name}.error.${i} -m ${JOBBASE}/log/refine_${method_name}.out.${i}
+	
+	done
+fi

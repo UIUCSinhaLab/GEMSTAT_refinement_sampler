@@ -39,7 +39,7 @@ fi
 pushd ${BASE_DIR}
 
 #JOBDIR=$(${BASE_DIR}/lib/scripts/makejob.bash ${JOB_ID} ENSEMBLE_REFINE)
-JOBDIR=${BASE_DIR}/ENSEMBLE_REFINE/${JOB_ID}
+JOBDIR=ENSEMBLE_REFINE/${JOB_ID}
 
 cat > ${JOBDIR}/other/fanin_redo.con << EOF
 Universe       = vanilla

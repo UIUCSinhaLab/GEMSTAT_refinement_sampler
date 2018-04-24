@@ -140,7 +140,6 @@ JOB fanin_${one_method_name}_${START_N} ${JOBDIR}/other/fanin.con
 VARS fanin_${one_method_name}_${START_N} method_name="${one_method_name}"
 VARS fanin_${one_method_name}_${START_N} start_f="${START_N}"
 VARS fanin_${one_method_name}_${START_N} end_f="${END_N}"
-Retry fanin_${one_method_name}_${START_N} 5
 PRIORITY fanin_${one_method_name}_${START_N} 10
 EOF
         done
