@@ -38,6 +38,8 @@ then
 	exit 1
 fi
 
+DO_FANIN=${DO_FANIN:-"True"}
+
 
 pushd ${BASE_DIR}
 
@@ -130,7 +132,8 @@ VARS refine_${one_method_name}_${whichitem} whichitem="${whichitem}"
 EOF
         done
 	
-	
+	if [ "${DO_FANIN}" == "True" ]
+	then	
 	#SETUP THE FANIN as part of the refinement dag
 	for START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1)) )
         do
@@ -167,7 +170,8 @@ EOF
         done
 
 	
-
+	fi
+	#End of fanin part
 
 
 

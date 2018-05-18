@@ -43,7 +43,7 @@ cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make con
 eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
 eval 'method_additional_args=${method_args_'"${method_name}"'}'
 eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${JOBBASE}/par/${N}.par --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par -- ${method_additional_args}
-)
+) && ( echo "Training on ${TRAIN_ORTHO} done" ) || (echo "Training on ${TRAIN_ORTHO} failed" )
 
 
 
@@ -63,7 +63,7 @@ do
 	eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
 	eval 'method_additional_args=${method_args_'"${method_name}"'}'
 	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
-	)
+	) && ( rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log ; echo "Crossval on ${ORTHO_NAME} DONE." ) || ( echo "Crossval on ${ORTHO_NAME} failed" )
 done
 
 
