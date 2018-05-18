@@ -9,7 +9,8 @@ LD_LIBRARY_PATH=~/usr/lib:/home/grad/samee1/packages/gsl-1.14/lib:/software/inte
 export LD_LIBRARY_PATH
 
 JOBBASE=$1
-N=$(( ${2} + 1 ))
+#N=$(( ${2} + 1 ))
+N=${2}
 method_name=${3}
 
 
