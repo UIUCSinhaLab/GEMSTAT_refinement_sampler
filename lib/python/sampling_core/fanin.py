@@ -150,7 +150,7 @@ class GS_Ensemble_Results(object):
         self.add_out_to_path("training", load_files, load_ids)
         
     
-    def __init__(self, filepath, output_dtype=np.float16, par_dtype=np.float16):
+    def __init__(self, filepath, output_dtype=np.float32, par_dtype=np.float64):
         self.f = None
         self.output_dtype = output_dtype
         self.par_dtype = par_dtype

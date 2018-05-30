@@ -12,7 +12,7 @@ all_requirements=""
 MAX_IDLEJOBS=100
 
 
-STEP_SIZE=500
+STEP_SIZE=100
 
 
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.

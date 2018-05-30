@@ -9,6 +9,7 @@ JOB_ID=$1
 all_requirements=""
 #'(Machine != "hal9013.cs.illinois.edu")'
 
+MAX_SIMULTANEOUS=200
 MAX_IDLEJOBS=100
 FANIN_GROUP_SIZE=100
 
@@ -61,10 +62,17 @@ Queue
 EOF
 
 
+#IN BASH
+max_running=${MAX_SIMULTANEOUS}
+stupid_concurrency_limits_value=$(condor_config_val -dump | grep CONCURRENCY_LIMIT_DEFAULT | awk '{print $3;}')
+stupid_concurrency_limits_value_deux=$(($stupid_concurrency_limits_value / $max_running))
+
 
 cat > ${JOBDIR}/other/refine.con << EOF
 Universe       = vanilla
 Executable     = ${BASE_DIR}/lib/scripts/refinement/single_refine.bash
+
+concurrency_limits = BRYAN_CONCURRENT:${stupid_concurrency_limits_value_deux}
 
 
 input   = /dev/null
@@ -204,4 +212,4 @@ cat > ${JOBDIR}/other/dagman.config << EOF
 DAGMAN_LOG_ON_NFS_IS_ERROR = False
 EOF
 
-condor_submit_dag -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
+condor_submit_dag -maxjobs ${MAX_SIMULTANEOUS} -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
