@@ -17,7 +17,9 @@ method_name=${3}
 source ${JOBBASE}/ENV_DUMP.txt
 source ${JOBBASE}/SETTINGS_2.bash
 
-export > ${JOBBASE}/final.bash
+export > ${JOBBASE}/final_singlecrossval.bash
+
+cd ${BASE}
 
 
 method_sample_dir=${JOBBASE}/samples/method_${method_name}/
@@ -33,38 +35,31 @@ mkdir -p ${training_data_dir}
 cp ${datadir_to_use}/base/* ${training_data_dir}
 cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make conditional
 
+TRAINED_PAR_FILE=${tmpdatadir}/trained_par_file.par
 
-#
-#Call the training method
-#
-
-#parenthesis so that the results of the eval don't come out into this shell.
 (
-#definitely not secure
-eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
-eval 'method_additional_args=${method_args_'"${method_name}"'}'
-eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${JOBBASE}/par/${N}.par --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par -- ${method_additional_args}
-) && ( echo "Training on ${TRAIN_ORTHO} done" ) || (echo "Training on ${TRAIN_ORTHO} failed" )
-
-
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/shared-mounts/sinhas-storage1/INFRASTRUCTURE/HAL/JUPYTER/python/lib/ PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/:${BASE}/lib/notebook_core/:${BASE}/lib/sampling_core/ python ${BASE}/lib/python/sampling_core/hdf5_par.py ${JOBBASE}/crossval/${method_name}.hd5 ${N} > ${TRAINED_PAR_FILE}
+)
 
 ##score that on every crossvalidation set
 for ORTHO_DIR in ${datadir_to_use}/ORTHO/*
 do
 	ORTHO_NAME=$(basename ${ORTHO_DIR})
-	
+
 	mkdir -p ${tmpdatadir}/ORTHO_${ORTHO_NAME}
 	cp ${datadir_to_use}/base/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
 	cp ${ORTHO_DIR}/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
-	
+
 	#
 	#Call the prediction method
 	#
+	echo "Trying to send output to " $( readlink -f ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out )
+
 	(
 	eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
 	eval 'method_additional_args=${method_args_'"${method_name}"'}'
-	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${method_sample_dir}/out/${N}.par --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
-	) && ( rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log ; echo "Crossval on ${ORTHO_NAME} DONE." ) || ( echo "Crossval on ${ORTHO_NAME} failed" )
+	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${TRAINED_PAR_FILE} --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
+	) && ( echo "rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log" ; echo "Crossval on ${ORTHO_NAME} DONE." ) || ( echo "Crossval on ${ORTHO_NAME} failed" )
 done
 
 echo "FINISHED"
