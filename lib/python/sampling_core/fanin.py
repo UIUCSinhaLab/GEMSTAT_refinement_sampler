@@ -116,7 +116,10 @@ class GS_Ensemble_Results(object):
         
         #1
         #TODO: Implement this
-        self.add_pars_to_path("parameters", os.path.join(job_method_directory,"out","{}.par"), sub_id_list)
+	try:
+        	self.add_pars_to_path("parameters", os.path.join(job_method_directory,"out","{}.par"), sub_id_list)
+	except Exception as err:
+		print("There was an exception loading the pars, but we will plod on anyway. {}".format(err))
         
         #2 Ortho output
         #find the list of orthologs, some runs might have had an error on an ortholog
