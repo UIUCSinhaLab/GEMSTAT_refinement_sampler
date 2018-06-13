@@ -41,10 +41,22 @@ TRAINED_PAR_FILE=${tmpdatadir}/trained_par_file.par
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/shared-mounts/sinhas-storage1/INFRASTRUCTURE/HAL/JUPYTER/python/lib/ PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/:${BASE}/lib/notebook_core/:${BASE}/lib/sampling_core/ python ${BASE}/lib/python/sampling_core/hdf5_par.py ${JOBBASE}/crossval/${method_name}.hd5 ${N} > ${TRAINED_PAR_FILE}
 )
 
+if [ -z "${CROSSVAL_ORTHOS}" ]
+then
+	CROSSVAL_ORTHOS=$(ls "${datadir_to_use}/ORTHO/" )
+fi
+
 ##score that on every crossvalidation set
-for ORTHO_DIR in ${datadir_to_use}/ORTHO/*
+for ORTHO_NAME in ${CROSSVAL_ORTHOS}
 do
-	ORTHO_NAME=$(basename ${ORTHO_DIR})
+	ORTHO_DIR="${datadir_to_use}/ORTHO/${ORTHO_NAME}"
+	if [ -d "${ORTHO_DIR}" ]
+	then
+		echo "crossvalidating on ${ORTHO_NAME}"
+	else
+		echo "Asked for an ortholog that does not exist! ${ORTHO_NAME}"
+		continue
+	fi
 
 	mkdir -p ${tmpdatadir}/ORTHO_${ORTHO_NAME}
 	cp ${datadir_to_use}/base/* ${tmpdatadir}/ORTHO_${ORTHO_NAME}/
@@ -59,7 +71,7 @@ do
 	eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
 	eval 'method_additional_args=${method_args_'"${method_name}"'}'
 	eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --data ${tmpdatadir}/ORTHO_${ORTHO_NAME} --parfile ${TRAINED_PAR_FILE} --log ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log --out ${method_sample_dir}/crossval/${ORTHO_NAME}_${N}.out -- ${method_additional_args}
-	) && ( echo "rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log" ; echo "Crossval on ${ORTHO_NAME} DONE." ) || ( echo "Crossval on ${ORTHO_NAME} failed" )
+	) && ( rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log ; echo "Crossval on ${ORTHO_NAME} DONE." ) || ( echo "Crossval on ${ORTHO_NAME} failed" )
 done
 
 echo "FINISHED"
