@@ -149,9 +149,13 @@ class GS_Ensemble_Results(object):
                                               "{}.out".format(one_id)), one_id) for one_id in sub_id_list]
         
         files_and_ids = [i for i in files_and_ids if os.path.exists(i[0])]
-        load_files, load_ids = zip(*files_and_ids)
-        self.add_out_to_path("training", load_files, load_ids)
-        
+        if len(files_and_ids) > 0:
+		try:
+			load_files, load_ids = zip(*files_and_ids)
+        		self.add_out_to_path("training", load_files, load_ids)
+        	except Exception as e:
+			print("FANIN exception loading training output")
+			print(e)
     
     def __init__(self, filepath, output_dtype=np.float32, par_dtype=np.float64):
         self.f = None
