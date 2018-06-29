@@ -30,7 +30,7 @@ export CROSSVAL_DIR=${JOBBASE}/crossval
 mkdir -p ${CROSSVAL_DIR}
 
 N_TO_REFINE=100
-SEED=667
+export SEED=${SEED:-"${RANDOM}"}
 
 if [ -f "REFINEMENT_SETTINGS/${JOBID}.bash" ]
 then
@@ -72,7 +72,7 @@ then
 		TEMPLATE_FILENAME=${TEMPLATE_NAME}
 	fi
 	
-	python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --base 0 --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/${TEMPLATE_FILENAME}
+	#python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --base 0 --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/${TEMPLATE_FILENAME}
 else
 	for N in $(seq ${N_TO_REFINE})	
 	do
