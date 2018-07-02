@@ -11,7 +11,7 @@ all_requirements=""
 
 MAX_SIMULTANEOUS=240
 MAX_IDLEJOBS=100
-FANIN_GROUP_SIZE=200
+BATCH_SIZE=100
 
 
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.
@@ -40,6 +40,10 @@ then
 fi
 
 DO_FANIN=${DO_FANIN:-"True"}
+
+
+NUM_BATCHES=$(( ${N_TO_REFINE} / ${BATCH_SIZE} ))
+
 
 
 pushd ${BASE_DIR}
@@ -74,18 +78,22 @@ Executable     = ${BASE_DIR}/lib/scripts/refinement/single_refine.bash
 
 concurrency_limits = BRYAN_CONCURRENT:${stupid_concurrency_limits_value_deux}
 
+batch_base = \$(batchnum) * ${BATCH_SIZE}
+single_num = \$(Process) + \$(batch_base)
+
 
 input   = /dev/null
-output  = ${JOBDIR}/log/refine_\$(method_name).out.\$(whichitem)
-error   = ${JOBDIR}/log/refine_\$(method_name).error.\$(whichitem)
+output  = ${JOBDIR}/log/refine_\$(method_name).out.\$INT(single_num)
+error   = ${JOBDIR}/log/refine_\$(method_name).error.\$INT(single_num)
 
 environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
 
 requirements = ${all_requirements}
 
-arguments = ${JOBDIR} \$(whichitem) \$(method_name)
+
+arguments = ${JOBDIR} \$INT(single_num) \$(method_name)
                                                   
-Queue 1
+Queue ${BATCH_SIZE}
 EOF
 
 cat > ${JOBDIR}/other/fanin.con << EOF
@@ -131,50 +139,42 @@ EOF
 for one_method_name in ${method_names}
 do
 	#THE ACTUAL COMPUTATIONS
-	for whichitem in $(seq 0 $((${N_TO_REFINE} - 1)) )
+	for batchnum in $(seq 0 $((${NUM_BATCHES} - 1)) )
         do
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
-JOB refine_${one_method_name}_${whichitem} ${JOBDIR}/other/refine.con
-VARS refine_${one_method_name}_${whichitem} method_name="${one_method_name}"
-VARS refine_${one_method_name}_${whichitem} whichitem="${whichitem}"
+JOB refine_${one_method_name}_batch${batchnum} ${JOBDIR}/other/refine.con
+VARS refine_${one_method_name}_batch${batchnum} method_name="${one_method_name}"
+VARS refine_${one_method_name}_batch${batchnum} batchnum="${batchnum}"
 EOF
         done
 	
 	if [ "${DO_FANIN}" == "True" ]
 	then	
 	#SETUP THE FANIN as part of the refinement dag
-	for START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1)) )
+	for batchnum in $(seq 0  $((${NUM_BATCHES} - 1)) )
         do
-                END_N=$((${START_N} + ${FANIN_GROUP_SIZE}))
+		START_N=$(( ${batchnum}*${BATCH_SIZE} ))
+                END_N=$(( ${START_N} + ${BATCH_SIZE} ))
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
-JOB fanin_${one_method_name}_${START_N} ${JOBDIR}/other/fanin.con
-VARS fanin_${one_method_name}_${START_N} method_name="${one_method_name}"
-VARS fanin_${one_method_name}_${START_N} start_f="${START_N}"
-VARS fanin_${one_method_name}_${START_N} end_f="${END_N}"
-PRIORITY fanin_${one_method_name}_${START_N} 10
-EOF
-        done
+JOB fanin_${one_method_name}_batch${batchnum} ${JOBDIR}/other/fanin.con
+VARS fanin_${one_method_name}_batch${batchnum} method_name="${one_method_name}"
+VARS fanin_${one_method_name}_batch${batchnum} start_f="${START_N}"
+VARS fanin_${one_method_name}_batch${batchnum} end_f="${END_N}"
+PRIORITY fanin_${one_method_name}_batch${batchnum} 10
+RETRY fanin_${one_method_name}_batch${batchnum} 3
+PARENT refine_${one_method_name}_batch${batchnum} CHILD fanin_${one_method_name}_batch${batchnum}
 
-	#Fanin jobs dependencies on main refine jobs
-	for J_START_N in $(seq 0 ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1))  )
-        do
-		J_END_N=$(( ${J_START_N} + ${FANIN_GROUP_SIZE} - 1 ))
-		J_END_N=$(($J_END_N>${N_TO_REFINE} - 1 ? ${N_TO_REFINE} - 1 : $J_END_N))
-		for one_job_to_fan_in in $(seq ${J_START_N} ${J_END_N})
-		do
-		cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
-PARENT  refine_${one_method_name}_${one_job_to_fan_in} CHILD fanin_${one_method_name}_${J_START_N}
 EOF
-		done
-	done
-
-	#dependencies between the steps of fanin
-        for C_START_N in $(seq ${FANIN_GROUP_SIZE} ${FANIN_GROUP_SIZE} $((${N_TO_REFINE} - 1)) )
-        do
-                P_START_N=$((${C_START_N} - ${FANIN_GROUP_SIZE}))
+	if [ ${batchnum} -ne 0 ]
+	then
+		PREVIOUS_BATCH=$(( ${batchnum} - 1 ))
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
-PARENT fanin_${one_method_name}_${P_START_N} CHILD fanin_${one_method_name}_${C_START_N}
+PARENT fanin_${one_method_name}_batch${PREVIOUS_BATCH} CHILD fanin_${one_method_name}_batch${batchnum}
 EOF
+
+	fi
+
+
         done
 
 	
@@ -192,7 +192,7 @@ done
 cat > ${JOBDIR}/other/everything.dag << EOF
 CONFIG ${JOBDIR}/other/dagman.config
 JOB setup ${JOBDIR}/other/setup.con
-JOB scores ${JOBDIR}/other/scores.con
+#JOB scores ${JOBDIR}/other/scores.con
 EOF
 
 for one_method_name in ${method_names}
@@ -201,7 +201,7 @@ do
 cat >> ${JOBDIR}/other/everything.dag << EOF
 SUBDAG EXTERNAL refine_${one_method_name} ${JOBDIR}/other/refine_${one_method_name}.dag
 PARENT setup CHILD refine_${one_method_name}
-PARENT refine_${one_method_name} CHILD scores
+#PARENT refine_${one_method_name} CHILD scores
 EOF
 
 done
