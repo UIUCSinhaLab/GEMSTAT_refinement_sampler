@@ -80,7 +80,8 @@ eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --train --d
 if [ $? -ne 0 ]
 then
 	echo "Aborting"; echo "Aborting" 2>&1 
-	exit 1
+	exit 0
+	#A non-zero exit status would tell the whole DAG to fail.
 fi
 
 
