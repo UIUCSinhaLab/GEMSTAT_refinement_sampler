@@ -9,9 +9,9 @@ JOB_ID=$1
 all_requirements=""
 #'(Machine != "hal9013.cs.illinois.edu")'
 
-MAX_SIMULTANEOUS=200
+MAX_SIMULTANEOUS=240
 MAX_IDLEJOBS=100
-FANIN_GROUP_SIZE=100
+FANIN_GROUP_SIZE=200
 
 
 #allows a job to be submit by its config file directly. That allows the user to use tab completion.

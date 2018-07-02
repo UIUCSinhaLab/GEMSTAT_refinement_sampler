@@ -73,8 +73,15 @@ eval 'method_additional_environment=${method_environment_'"${method_name}"'}'
 eval 'method_additional_args=${method_args_'"${method_name}"'}'
 eval ${method_additional_environment} ${BASE}/METHODS/${method_name} --train --data ${training_data_dir} --parfile ${THE_PAR_FILE} --log ${method_sample_dir}/log/${N}.log --out ${method_sample_dir}/out/${N}.out --parout ${method_sample_dir}/out/${N}.par -- ${method_additional_args}
 ) \
-&& ( echo "Training on ${TRAIN_ORTHO} done" ; echo "Training on ${TRAIN_ORTHO} done" >&2 ) \
+&& ( echo "Training on ${TRAIN_ORTHO} done" ; echo "Training on ${TRAIN_ORTHO} done" >&2 ; exit 0) \
 || (echo "Training on ${TRAIN_ORTHO} failed" ; echo "Training on ${TRAIN_ORTHO} FAILED" >&2 ; exit 1 ) 
+
+#The above does not quit the main script on failure.
+if [ $? -ne 0 ]
+then
+	echo "Aborting"; echo "Aborting" 2>&1 
+	exit 1
+fi
 
 
 
@@ -111,6 +118,8 @@ do
 	) \
 	&& ( rm ${method_sample_dir}/log/${ORTHO_NAME}_${N}.log ; echo "Crossval on ${ORTHO_NAME} DONE." ; echo "Crossval on ${ORTHO_NAME} DONE." >&2 ) \
 	|| ( echo "Crossval on ${ORTHO_NAME} failed" ; echo "Crossval on ${ORTHO_NAME} failed" >&2 )
+
+	#Do NOT abort if a crossvalidation fails.
 done
 
 (echo "FINISHED" ; echo "FINISHED" >&2 )

@@ -37,6 +37,7 @@ cp ${datadir_to_use}/ORTHO/${TRAIN_ORTHO}/* ${training_data_dir} #TODO: Make con
 
 TRAINED_PAR_FILE=${tmpdatadir}/trained_par_file.par
 
+#Get a par file from the HDF5 par store.
 (
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/shared-mounts/sinhas-storage1/INFRASTRUCTURE/HAL/JUPYTER/python/lib/ PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/:${BASE}/lib/notebook_core/:${BASE}/lib/sampling_core/ python ${BASE}/lib/python/sampling_core/hdf5_par.py ${JOBBASE}/crossval/${method_name}.hd5 ${N} > ${TRAINED_PAR_FILE}
 )
