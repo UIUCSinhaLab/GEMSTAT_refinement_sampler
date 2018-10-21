@@ -1,7 +1,9 @@
 #!/bin/bash
 
-#module load python
-export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
+source /home/bjlunt2/.bashrc
+
+module load python/2.7.11
+#export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
 
 echo "USING PYTHON " $(which python)
 

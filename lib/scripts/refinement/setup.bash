@@ -1,8 +1,12 @@
 #!/bin/bash
 
+echo "SETUP STARTING "
 
-#module load python
-export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
+source /home/bjlunt2/.bashrc
+source /home/bjlunt2/.profile
+
+module load python/2.7.11
+#export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
 
 echo "USING PYTHON " $(which python)
 
@@ -80,4 +84,4 @@ else
 	done
 fi
 
-export | grep -e " BASE=" -e " JOBBASE=" -e " DATA=" -e " CROSSVAL_DIR=" -e " DATA=" -e " DATA_ORIGIN=" -e " JOBID=" -e " LOG=" -e " LD_LIBRARY_PATH=" -e " PATH=" -e " PAR_DIR=" > ${JOBBASE}/ENV_DUMP.txt
+export | grep -e " BASE=" -e " JOBBASE=" -e " DATA=" -e " CROSSVAL_DIR=" -e " DATA=" -e " DATA_ORIGIN=" -e " JOBID=" -e " LOG=" -e " PAR_DIR=" > ${JOBBASE}/ENV_DUMP.txt
