@@ -10,7 +10,8 @@ all_requirements=""
 #'(Machine != "hal9013.cs.illinois.edu")'
 
 MAX_SIMULTANEOUS=240
-MAX_IDLEJOBS=100
+MAX_RUNNING_BATCHES=2
+MAX_IDLEJOBS=2
 BATCH_SIZE=100
 
 
@@ -54,6 +55,8 @@ cat > ${JOBDIR}/other/setup.con << EOF
 Universe       = vanilla
 Executable     = ${BASE_DIR}/lib/scripts/refinement/setup.bash
 
+getenv = true
+
 input   = /dev/null
 output  = ${JOBDIR}/log/setup.out     
 error   = ${JOBDIR}/log/setup.error
@@ -81,6 +84,7 @@ concurrency_limits = BRYAN_CONCURRENT:${stupid_concurrency_limits_value_deux}
 batch_base = \$(batchnum) * ${BATCH_SIZE}
 single_num = \$(Process) + \$(batch_base)
 
+getenv = true
 
 input   = /dev/null
 output  = ${JOBDIR}/log/refine_\$(method_name).out.\$INT(single_num)
@@ -143,6 +147,7 @@ do
         do
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
 JOB refine_${one_method_name}_batch${batchnum} ${JOBDIR}/other/refine.con
+CATEGORY refine_${one_method_name}_batch${batchnum} refinement
 VARS refine_${one_method_name}_batch${batchnum} method_name="${one_method_name}"
 VARS refine_${one_method_name}_batch${batchnum} batchnum="${batchnum}"
 EOF
@@ -156,11 +161,13 @@ EOF
 		START_N=$(( ${batchnum}*${BATCH_SIZE} ))
                 END_N=$(( ${START_N} + ${BATCH_SIZE} ))
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+
 JOB fanin_${one_method_name}_batch${batchnum} ${JOBDIR}/other/fanin.con
+CATEGORY fanin_${one_method_name}_batch${batchnum} fanin
 VARS fanin_${one_method_name}_batch${batchnum} method_name="${one_method_name}"
 VARS fanin_${one_method_name}_batch${batchnum} start_f="${START_N}"
 VARS fanin_${one_method_name}_batch${batchnum} end_f="${END_N}"
-PRIORITY fanin_${one_method_name}_batch${batchnum} 10
+PRIORITY fanin_${one_method_name}_batch${batchnum} 200
 RETRY fanin_${one_method_name}_batch${batchnum} 3
 PARENT refine_${one_method_name}_batch${batchnum} CHILD fanin_${one_method_name}_batch${batchnum}
 
@@ -170,6 +177,7 @@ EOF
 		PREVIOUS_BATCH=$(( ${batchnum} - 1 ))
                 cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
 PARENT fanin_${one_method_name}_batch${PREVIOUS_BATCH} CHILD fanin_${one_method_name}_batch${batchnum}
+#PARENT refine_${one_method_name}_batch${PREVIOUS_BATCH} CHILD refine_${one_method_name}_batch${batchnum}
 EOF
 
 	fi
@@ -184,7 +192,9 @@ EOF
 
 
 done
-
+cat >> ${JOBDIR}/other/refine_${one_method_name}.dag << EOF
+MAXJOBS refinement ${MAX_RUNNING_BATCHES}
+EOF
 
 #
 # CREATE the overal DAG
@@ -212,4 +222,4 @@ cat > ${JOBDIR}/other/dagman.config << EOF
 DAGMAN_LOG_ON_NFS_IS_ERROR = False
 EOF
 
-condor_submit_dag -maxjobs ${MAX_SIMULTANEOUS} -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
+condor_submit_dag -maxjobs ${MAX_RUNNING_BATCHES} -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/everything.dag
