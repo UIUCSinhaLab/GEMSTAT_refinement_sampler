@@ -1,8 +1,12 @@
 #!/bin/bash
 
+echo "SETUP STARTING "
 
-#module load python
-export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
+source /home/bjlunt2/.bashrc
+source /home/bjlunt2/.profile
+
+module load python/2.7.11
+#export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
 
 echo "USING PYTHON " $(which python)
 
@@ -30,7 +34,7 @@ export CROSSVAL_DIR=${JOBBASE}/crossval
 mkdir -p ${CROSSVAL_DIR}
 
 N_TO_REFINE=100
-SEED=667
+export SEED=${SEED:-"${RANDOM}"}
 
 if [ -f "REFINEMENT_SETTINGS/${JOBID}.bash" ]
 then
@@ -72,7 +76,7 @@ then
 		TEMPLATE_FILENAME=${TEMPLATE_NAME}
 	fi
 	
-	python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --base 0 --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/${TEMPLATE_FILENAME}
+	#python ${BASE}/lib/python/sampling_core/par_template_processor.py --seed ${SEED} --base 0 --N ${N_TO_REFINE} --outpre ${PAR_DIR}/ ${DATA}/${TEMPLATE_FILENAME}
 else
 	for N in $(seq ${N_TO_REFINE})	
 	do
@@ -80,4 +84,4 @@ else
 	done
 fi
 
-export | grep -e " BASE=" -e " JOBBASE=" -e " DATA=" -e " CROSSVAL_DIR=" -e " DATA=" -e " DATA_ORIGIN=" -e " JOBID=" -e " LOG=" -e " LD_LIBRARY_PATH=" -e " PATH=" -e " PAR_DIR=" > ${JOBBASE}/ENV_DUMP.txt
+export | grep -e " BASE=" -e " JOBBASE=" -e " DATA=" -e " CROSSVAL_DIR=" -e " DATA=" -e " DATA_ORIGIN=" -e " JOBID=" -e " LOG=" -e " PAR_DIR=" > ${JOBBASE}/ENV_DUMP.txt
