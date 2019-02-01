@@ -1,0 +1,136 @@
+#1/bin/bash
+
+#!/bin/bash
+#
+# from stackoverflow.com : http://stackoverflow.com/a/14203146
+#
+# Use -gt 1 to consume two arguments per pass in the loop (e.g. each
+# argument has a corresponding value to go with it).
+# Use -gt 0 to consume one or more arguments per pass in the loop (e.g.
+# some arguments don't have a corresponding value to go with it such
+# as in the --default example).
+# note: if this is set to -gt 0 the /etc/hosts part is not recognized ( may be a bug )
+
+#expected from environment
+#BASE
+#DATA
+#JOBBASE
+#N job number
+#Whatever was in your settings file.
+
+
+
+#DEBUG
+echo "I received arguments ${*}"
+
+#Default values
+TRAIN=0
+
+
+while [[ $# -gt 1 ]]
+do
+key="$1"
+
+case $key in
+    -t|--train)
+    TRAIN=1
+    ;;
+    -d|--data)
+    DATA="$2"
+    shift # past argument
+    ;;
+    -l|--log)
+    LOG="$2"
+    shift # past argument
+    ;;
+    -o|--out)
+    OUT_filename="$2"
+    shift
+    ;;
+    -x|--parout)
+    PAR_outfile="$2"
+    shift
+    ;;
+    -p|--parfile)
+    PARFILE="$2"
+    shift
+    ;;
+    --)
+    shift
+    break
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+shift # past argument or value
+done
+
+#DEBUG
+echo "Additional arguments" "${*}"
+echo "DATA" ${DATA}
+##
+#Snippet from
+#
+#http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+#
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#
+#end snippet
+##
+
+#just for test
+#DEBUG
+SRC=${BASE}/GEM/SIG/src
+
+
+#module load python
+export PATH=/software/python-2.7.10-x86_64/bin:${PATH}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/shared-mounts/sinhas-storage1/INFRASTRUCTURE/HAL/JUPYTER/python/lib/
+PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/:${BASE}/lib/notebook_core/:${BASE}/lib/sampling_core/:
+
+
+#use whatever way you want to separate training from prediction
+if [ ! "$TRAIN" == "1" ]
+then
+	NA_CYCLES=0
+fi
+
+SINGLE_PAR_FILE=$(basename ${PARFILE} .par)
+STARTING_POINT_ARGS="-p ${PARFILE}"
+
+
+export BASE_COMMON_ARGS="-e ${DATA}/expr.tab -f $DATA/factor_expr.tab -m $DATA/factors.wtmx -i ${DATA}/factor_info.txt -c $DATA/coop.txt -ff $DATA/free_fix.txt -lower_bound ${DATA}/lower.par -upper_bound ${DATA}/upper.par"
+
+
+export COMMON_DATA_ARGS="-s $DATA/seqs.fa "
+export MODEL_ARGS="-o Direct -oo SSE -ct 38 -rt 0 "
+
+
+if [ "${TRAIN}" == "1" ]
+then
+	tmpdatadir=$(mktemp -d ${TMP-${TMPDIR}}/noiseddata.XXXXXX)
+	cp ${DATA}/* ${tmpdatadir}/
+	export PYTHONPATH=${PYTHONPATH}:${BASE}/lib/GEMSTAT_scripts/python/src/
+	python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 ${SIGMA0} --s1 ${SIGMA1} --C ${COPIES} ${tmpdatadir}/factor_expr.tab ${tmpdatadir}/factor_expr.tab.noise
+	python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/expr.tab ${tmpdatadir}/expr.tab.noise
+	if [ -f "${tmpdatadir}/weights.tab" ]
+	then
+		python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/weights.tab ${tmpdatadir}/weights.tab.noise
+	        BASE_COMMON_ARGS="${BASE_COMMON_ARGS} -train_weights ${tmpdatadir}/weights.tab.noise"
+	fi
+	if [ -f "${tmpdatadir}/signal.tab" ]
+	then
+		python ${BASE}/lib/GEMSTAT_scripts/python/scripts/apply_noise_regularization.py --s0 0.0 --s1 0.0 --C ${COPIES} ${tmpdatadir}/signal.tab ${tmpdatadir}/signal.tab.noise
+	fi
+	#don't make it conditional, we want an error if there is no signalling data.
+	BASE_COMMON_ARGS="${BASE_COMMON_ARGS} -signal ${tmpdatadir}/signal.tab.noise"
+	
+
+	PYTHONPATH=${PYTHONPATH} python ${SCRIPT_DIR}/AnnotationFilter.py ${PARFILE} $DATA/factors.wtmx  $DATA/seqs.fa > ${TEMP}/filtered_annotations.txt
+	
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} -e ${tmpdatadir}/expr.tab.noise -f ${tmpdatadir}/factor_expr.tab.noise ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -po ${PAR_outfile} ${*} -a ${TEMP}/filtered_annotations.txt &> ${LOG}
+else
+	PYTHONPATH=${PYTHONPATH} python ${SCRIPT_DIR}/AnnotationFilter.py ${PARFILE} $DATA/factors.wtmx  $DATA/seqs.fa > ${TEMP}/filtered_annotations.txt
+	$SRC/seq2expr ${BASE_COMMON_ARGS} ${COMMON_DATA_ARGS} ${MODEL_ARGS} -fo ${OUT_filename} -na ${NA_CYCLES} ${STARTING_POINT_ARGS} -signal ${DATA}/signal.tab ${*} -oo SSE -na 0 -a ${TEMP}/filtered_annotations.txt &> ${LOG}
+fi

@@ -1,0 +1,85 @@
+#!/bin/bash
+
+
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+BASE_DIR=${SCRIPT_DIR}/..
+
+JOB_ID=$1
+
+all_requirements=""
+#'(Machine != "hal9013.cs.illinois.edu")'
+
+MAX_IDLEJOBS=100
+
+
+STEP_SIZE=100
+
+
+#allows a job to be submit by its config file directly. That allows the user to use tab completion.
+if [ -f "${JOB_ID}" ]
+then
+	JOB_ID=$(basename ${JOB_ID} .bash)
+	echo "Submit by file, JOB_ID : ${JOB_ID}"
+fi
+
+
+if [ -f "${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash" ]
+then
+	source ${BASE_DIR}/REFINEMENT_SETTINGS/${JOB_ID}.bash
+else
+	echo "I could not find the job configuration file for the job you asked for."
+	echo "If you specified it by file, that file must be in the proper"
+	echo "directory. (REFINEMENT_SETTINGS)"
+	echo "${BASE_DIR}/REFINEMENT_SETTINGS/"
+	exit 1
+fi
+
+
+
+pushd ${BASE_DIR}
+
+#JOBDIR=$(${BASE_DIR}/lib/scripts/makejob.bash ${JOB_ID} ENSEMBLE_REFINE)
+JOBDIR=ENSEMBLE_REFINE/${JOB_ID}
+
+cat > ${JOBDIR}/other/fanin_redo.con << EOF
+Universe       = vanilla
+Executable     = ${BASE_DIR}/lib/scripts/fanin_redo.bash
+
+
+input   = /dev/null
+output  = ${JOBDIR}/log/fanin_redo_\$(method_name).out.\$(start_f)
+error   = ${JOBDIR}/log/fanin_redo_\$(method_name).error.\$(start_f)
+
+environment = "BASE=${BASE_DIR} JOBBASE=${JOBDIR} JOBID=${JOB_ID}"
+
+requirements = ${all_requirements}
+
+arguments = ${JOBDIR} \$(method_name) \$(start_f) \$(end_f)
+                                                  
+Queue 1
+EOF
+
+
+for one_method_name in ${method_names}
+do
+	echo -n "" >  ${JOBDIR}/other/fanin_redo_${one_method_name}.dag
+	for START_N in $(seq 0 ${STEP_SIZE} $((${N_TO_REFINE} - 1)))
+	do
+		END_N=$((${START_N} + ${STEP_SIZE}))
+		cat >> ${JOBDIR}/other/fanin_redo_${one_method_name}.dag << EOF
+JOB fanin_redo_${one_method_name}_${START_N} ${JOBDIR}/other/fanin_redo.con
+VARS fanin_redo_${one_method_name}_${START_N} method_name="${one_method_name}"
+VARS fanin_redo_${one_method_name}_${START_N} start_f="${START_N}"
+VARS fanin_redo_${one_method_name}_${START_N} end_f="${END_N}"
+EOF
+	done
+
+	for C_START_N in $(seq ${STEP_SIZE} ${STEP_SIZE} $((${N_TO_REFINE} - 1)))
+	do
+		P_START_N=$((${C_START_N} - ${STEP_SIZE}))
+		cat >> ${JOBDIR}/other/fanin_redo_${one_method_name}.dag << EOF
+PARENT fanin_redo_${one_method_name}_${P_START_N} CHILD fanin_redo_${one_method_name}_${C_START_N}
+EOF
+	done
+condor_submit_dag -maxidle ${MAX_IDLEJOBS} -batch-name ${JOB_ID} ${JOBDIR}/other/fanin_redo_${one_method_name}.dag
+done
